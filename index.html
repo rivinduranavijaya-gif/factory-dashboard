@@ -1,251 +1,899 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Control Tower V2</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Control Tower V2</title>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --dark1: #0f172a;
+      --dark2: #334155;
+      --red-bg: #fee2e2;
+      --red-fg: #991b1b;
+      --amber-bg: #fef3c7;
+      --amber-fg: #92400e;
+      --green-bg: #dcfce7;
+      --green-fg: #166534;
+      --blue-bg: #dbeafe;
+      --blue-fg: #1d4ed8;
+      --slate-bg: #e2e8f0;
+      --slate-fg: #334155;
+    }
 
-<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+    * { box-sizing: border-box; }
 
-<style>
-:root {
-  --bg:#f5f7fb;
-  --card:#ffffff;
-  --text:#0f172a;
-  --muted:#64748b;
-  --dark:#0f172a;
-  --accent:#1e293b;
-}
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, Arial, sans-serif;
+    }
 
-body {
-  margin:0;
-  font-family:Arial, Helvetica, sans-serif;
-  background:var(--bg);
-  color:var(--text);
-}
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 24px;
+      display: grid;
+      gap: 24px;
+    }
 
-.wrap {
-  max-width:1400px;
-  margin:auto;
-  padding:20px;
-}
+    .card {
+      background: var(--card);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+    }
 
-.header {
-  background:linear-gradient(135deg,#0f172a,#334155);
-  color:white;
-  padding:30px;
-  border-radius:20px;
-}
+    .card.dark {
+      background: linear-gradient(135deg, var(--dark1), var(--dark2));
+      color: white;
+    }
 
-.header h1 {
-  margin:0;
-  font-size:42px;
-}
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
 
-.header p {
-  margin-top:10px;
-  opacity:0.8;
-}
+    .eyebrow {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #cbd5e1;
+    }
 
-.btn {
-  margin-top:15px;
-  padding:12px 18px;
-  border-radius:10px;
-  border:none;
-  cursor:pointer;
-  margin-right:10px;
-}
+    .hero-title {
+      font-size: 42px;
+      font-weight: 900;
+      margin-top: 10px;
+      letter-spacing: -0.04em;
+    }
 
-.primary { background:white; }
-.secondary { background:#475569;color:white; }
+    .hero-sub {
+      font-size: 16px;
+      color: #dbeafe;
+      margin-top: 10px;
+      max-width: 850px;
+      line-height: 1.5;
+    }
 
-.kpis {
-  display:grid;
-  grid-template-columns:repeat(5,1fr);
-  gap:15px;
-  margin-top:20px;
-}
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-self: start;
+    }
 
-.card {
-  background:var(--card);
-  padding:20px;
-  border-radius:15px;
-  box-shadow:0 5px 20px rgba(0,0,0,0.05);
-}
+    .btn-link,
+    .btn-upload {
+      border-radius: 18px;
+      padding: 12px 16px;
+      font-weight: 800;
+      text-decoration: none;
+      display: inline-block;
+      cursor: pointer;
+      border: none;
+      font-size: 14px;
+    }
 
-.label {
-  color:var(--muted);
-  font-size:13px;
-}
+    .btn-link {
+      background: white;
+      color: var(--text);
+    }
 
-.value {
-  font-size:28px;
-  font-weight:bold;
-  margin-top:5px;
-}
+    .btn-upload {
+      background: rgba(255, 255, 255, 0.12);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+    }
 
-.grid {
-  display:grid;
-  grid-template-columns:1.3fr 1fr;
-  gap:20px;
-  margin-top:20px;
-}
+    .status-box,
+    .story-box {
+      border-radius: 16px;
+      padding: 14px;
+      font-size: 14px;
+    }
 
-input {
-  padding:10px;
-  width:100%;
-  margin-bottom:10px;
-}
+    .status-box {
+      margin-top: 18px;
+      background: rgba(255, 255, 255, 0.12);
+      color: #e2e8f0;
+    }
 
-.tag {
-  display:inline-block;
-  padding:6px 10px;
-  border-radius:20px;
-  margin-right:5px;
-  margin-top:5px;
-  cursor:pointer;
-  border:1px solid #ddd;
-}
+    .story-list {
+      margin-top: 18px;
+      display: grid;
+      gap: 12px;
+    }
 
-.activeTag {
-  background:#0f172a;
-  color:white;
-}
+    .story-box {
+      background: rgba(255, 255, 255, 0.08);
+    }
 
-.factory {
-  padding:10px;
-  border-bottom:1px solid #eee;
-}
+    .kpi-grid {
+      display: grid;
+      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    }
 
-</style>
+    .kpi-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+
+    .kpi-value {
+      font-size: 34px;
+      font-weight: 800;
+      margin-top: 8px;
+    }
+
+    .kpi-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+
+    .two-col {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: 1.1fr 0.9fr;
+    }
+
+    .three-col {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .half-col {
+      display: grid;
+      gap: 24px;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      margin-bottom: 16px;
+    }
+
+    .filter-stack {
+      display: grid;
+      gap: 14px;
+    }
+
+    .search-input {
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid #cbd5e1;
+      font-size: 14px;
+      width: 100%;
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .pill {
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid #cbd5e1;
+      background: white;
+      color: #334155;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .pill.active {
+      background: var(--dark1);
+      color: white;
+    }
+
+    .decision-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .decision-box {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+    }
+
+    .decision-label {
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .decision-value {
+      font-size: 30px;
+      font-weight: 900;
+      margin-top: 6px;
+    }
+
+    .decision-value.small { font-size: 24px; }
+    .decision-value.smaller { font-size: 18px; }
+
+    .mini-bars {
+      display: grid;
+      gap: 12px;
+    }
+
+    .mini-row-label {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 14px;
+      margin-bottom: 5px;
+    }
+
+    .bar-track {
+      height: 8px;
+      border-radius: 999px;
+      background: var(--line);
+    }
+
+    .bar-fill {
+      height: 8px;
+      border-radius: 999px;
+      background: var(--dark1);
+    }
+
+    .watchlist {
+      display: grid;
+      gap: 12px;
+    }
+
+    .watch-item {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 16px;
+    }
+
+    .watch-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .watch-name {
+      font-weight: 800;
+    }
+
+    .watch-sub {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    .badge-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .badge {
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      display: inline-block;
+    }
+
+    .badge.red { background: var(--red-bg); color: var(--red-fg); }
+    .badge.amber { background: var(--amber-bg); color: var(--amber-fg); }
+    .badge.green { background: var(--green-bg); color: var(--green-fg); }
+    .badge.blue { background: var(--blue-bg); color: var(--blue-fg); }
+    .badge.slate { background: var(--slate-bg); color: var(--slate-fg); }
+
+    .watch-body {
+      margin-top: 10px;
+      font-size: 13px;
+      color: #475569;
+      line-height: 1.5;
+    }
+
+    .table-shell {
+      overflow: hidden;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+    }
+
+    .table-head,
+    .table-row {
+      display: grid;
+      grid-template-columns: 1.3fr 0.7fr 0.7fr 0.8fr 1fr;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+    }
+
+    .table-head {
+      background: var(--bg);
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .table-body {
+      max-height: 420px;
+      overflow: auto;
+    }
+
+    .table-row {
+      font-size: 14px;
+      border-top: 1px solid var(--line);
+    }
+
+    .strong { font-weight: 700; }
+
+    @media (max-width: 1100px) {
+      .two-col,
+      .three-col,
+      .half-col {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
-
 <body>
-<div class="wrap">
+  <div class="container">
+    <div class="card dark">
+      <div class="hero-top">
+        <div>
+          <div class="eyebrow">Group sourcing command center</div>
+          <div class="hero-title">Control Tower V2</div>
+          <div class="hero-sub">Executive visibility across risk, dependency, country concentration, and recommended sourcing actions.</div>
+        </div>
+        <div class="hero-actions">
+          <a id="openLiveCsv" class="btn-link" href="#" target="_blank" rel="noreferrer">Open live CSV</a>
+          <label class="btn-upload">
+            Upload manual override CSV
+            <input id="csvInput" type="file" accept=".csv" style="display:none" />
+          </label>
+        </div>
+      </div>
+      <div id="statusMessage" class="status-box">Connecting to live GitHub data source...</div>
+      <div id="storyList" class="story-list"></div>
+    </div>
 
-<div class="header">
-  <h1>Control Tower V2</h1>
-  <p>Executive visibility across sourcing network</p>
+    <div class="kpi-grid">
+      <div class="card"><div class="kpi-label">Factories</div><div class="kpi-value" id="kpiFactories">0</div><div class="kpi-sub">Current filtered footprint</div></div>
+      <div class="card"><div class="kpi-label">Active</div><div class="kpi-value" id="kpiActive">0</div><div class="kpi-sub">Operationally active sites</div></div>
+      <div class="card"><div class="kpi-label">High risk</div><div class="kpi-value" id="kpiHigh">0</div><div class="kpi-sub" id="kpiHighSub">0 medium risk sites</div></div>
+      <div class="card"><div class="kpi-label">At-risk capacity</div><div class="kpi-value" id="kpiRiskCap">0</div><div class="kpi-sub">Capacity in high-risk factories</div></div>
+      <div class="card"><div class="kpi-label">Top 5 supplier share</div><div class="kpi-value" id="kpiSupplierShare">0%</div><div class="kpi-sub">Dependency concentration</div></div>
+      <div class="card"><div class="kpi-label">Total capacity</div><div class="kpi-value" id="kpiTotalCap">0</div><div class="kpi-sub">Filtered network capacity</div></div>
+    </div>
 
-  <button class="btn primary" onclick="loadData()">Open live CSV</button>
-</div>
+    <div class="two-col">
+      <div class="card">
+        <div class="section-title">Control filters</div>
+        <div class="filter-stack">
+          <input id="searchInput" class="search-input" placeholder="Search factory, code, country, city, supplier..." />
+          <div id="regionPills" class="pill-row"></div>
+          <div id="riskPills" class="pill-row"></div>
+        </div>
+      </div>
 
-<div class="kpis">
-  <div class="card"><div class="label">Factories</div><div class="value" id="kpiFactories">0</div></div>
-  <div class="card"><div class="label">Active</div><div class="value" id="kpiActive">0</div></div>
-  <div class="card"><div class="label">High Risk</div><div class="value" id="kpiRisk">0</div></div>
-  <div class="card"><div class="label">At Risk Capacity</div><div class="value" id="kpiCapacity">0</div></div>
-  <div class="card"><div class="label">Top Supplier %</div><div class="value" id="kpiTop">0%</div></div>
-</div>
+      <div class="card">
+        <div class="section-title">Decision panel</div>
+        <div class="decision-grid">
+          <div class="decision-box">
+            <div class="decision-label">Immediate action sites</div>
+            <div class="decision-value" id="decisionImmediate">0</div>
+          </div>
+          <div class="decision-box">
+            <div class="decision-label">Largest country dependency</div>
+            <div class="decision-value small" id="decisionCountry">-</div>
+          </div>
+          <div class="decision-box">
+            <div class="decision-label">Largest supplier dependency</div>
+            <div class="decision-value smaller" id="decisionSupplier">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-<div class="grid">
+    <div class="three-col">
+      <div class="card">
+        <div class="section-title">Country capacity</div>
+        <div id="countryBars" class="mini-bars"></div>
+      </div>
+      <div class="card">
+        <div class="section-title">Supplier concentration</div>
+        <div id="supplierBars" class="mini-bars"></div>
+      </div>
+      <div class="card">
+        <div class="section-title">Average risk by country</div>
+        <div id="riskBars" class="mini-bars"></div>
+      </div>
+    </div>
 
-<div class="card">
-  <h3>Control filters</h3>
-  <input id="search" placeholder="Search..." oninput="render()"/>
+    <div class="half-col">
+      <div class="card">
+        <div class="section-title">Executive watchlist</div>
+        <div id="watchlist" class="watchlist"></div>
+      </div>
 
-  <div>
-    <span class="tag activeTag" onclick="setRisk('all')">All</span>
-    <span class="tag" onclick="setRisk('high')">High risk</span>
-    <span class="tag" onclick="setRisk('medium')">Medium</span>
-    <span class="tag" onclick="setRisk('low')">Low</span>
+      <div class="card">
+        <div class="section-title">Country strategy table</div>
+        <div class="table-shell">
+          <div class="table-head">
+            <div>Country</div><div>Sites</div><div>High</div><div>Avg risk</div><div>Capacity</div>
+          </div>
+          <div id="countryTable" class="table-body"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <div id="list"></div>
-</div>
+  <script>
+    const DATA_URL = "data/factory_master.csv";
+    let rawRows = [];
+    let search = "";
+    let region = "All";
+    let riskView = "All";
 
-<div class="card">
-  <h3>Decision panel</h3>
-  <p id="decision"></p>
-</div>
+    document.getElementById("openLiveCsv").href = DATA_URL;
 
-</div>
-
-</div>
-
-<script>
-const DATA_URL = "data/factory_master.csv";
-
-let rows = [];
-let filterRisk = "all";
-
-function loadData(){
-  Papa.parse(DATA_URL,{
-    download:true,
-    header:true,
-    skipEmptyLines:true,
-    complete:(res)=>{
-      rows = res.data.map(r=>({
-        name:r.name,
-        country:r.country,
-        capacity:Number(r.capacity)||0,
-        status:(r.status||"").toLowerCase()
-      }));
-
-      updateKPIs();
-      render();
+    function fmtNum(v) {
+      const n = Number(v || 0);
+      return Number.isFinite(n) ? n.toLocaleString() : "0";
     }
-  });
-}
 
-function riskLevel(r){
-  if(r.status.includes("inactive")) return "high";
-  if(r.capacity < 50000) return "medium";
-  return "low";
-}
+    function toNumber(v) {
+      return Number(String(v || 0).replace(/,/g, "").trim()) || 0;
+    }
 
-function updateKPIs(){
-  document.getElementById("kpiFactories").textContent = rows.length;
+    function normalizeText(v, fallback = "") {
+      return String(v == null ? fallback : v).trim();
+    }
 
-  const active = rows.filter(r=>r.status.includes("active")).length;
-  document.getElementById("kpiActive").textContent = active;
+    function parseCsv(text) {
+      const result = Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (h) => String(h || "").trim().toLowerCase(),
+      });
 
-  const high = rows.filter(r=>riskLevel(r)=="high").length;
-  document.getElementById("kpiRisk").textContent = high;
+      return (result.data || []).map((row, idx) => ({
+        id: idx + 1,
+        factory_code: normalizeText(row.factory_code, `ROW-${idx + 1}`),
+        name: normalizeText(row.name, `Factory ${idx + 1}`),
+        address: normalizeText(row.address),
+        city: normalizeText(row.city),
+        country: normalizeText(row.country, "Unknown"),
+        region: normalizeText(row.region, "Other"),
+        product: normalizeText(row.product, "Unspecified"),
+        status: normalizeText(row.status, "Unknown"),
+        compliance: normalizeText(row.compliance, "Not Set"),
+        latitude: toNumber(row.latitude),
+        longitude: toNumber(row.longitude),
+        capacity: toNumber(row.capacity),
+        contact: normalizeText(row.contact),
+        email: normalizeText(row.email),
+        last_order: normalizeText(row.last_order),
+        location_type: normalizeText(row.location_type, "Approximate"),
+      }));
+    }
 
-  const cap = rows
-    .filter(r=>riskLevel(r)=="high")
-    .reduce((a,b)=>a+b.capacity,0);
+    function daysSince(dateText) {
+      if (!dateText) return 999;
+      const parts = String(dateText).split(/[/-]/);
+      let d = null;
 
-  document.getElementById("kpiCapacity").textContent = cap.toLocaleString();
+      if (parts.length === 3) {
+        const a = Number(parts[0]);
+        const b = Number(parts[1]);
+        const c = Number(parts[2]);
+        if (a > 31) d = new Date(a, b - 1, c);
+        else d = new Date(c, b - 1, a);
+      } else {
+        d = new Date(dateText);
+      }
 
-  const total = rows.reduce((a,b)=>a+b.capacity,0);
-  const top = rows.sort((a,b)=>b.capacity-a.capacity)[0];
+      if (!d || Number.isNaN(d.getTime())) return 999;
+      return Math.max(0, Math.floor((Date.now() - d.getTime()) / (1000 * 60 * 60 * 24)));
+    }
 
-  const pct = top ? Math.round((top.capacity/total)*100) : 0;
-  document.getElementById("kpiTop").textContent = pct + "%";
-}
+    function complianceScore(v) {
+      const x = String(v || "").toLowerCase();
+      if (x.includes("approved") || x.includes("pass")) return 10;
+      if (x.includes("pending")) return 50;
+      if (x.includes("review")) return 65;
+      if (x.includes("expired")) return 85;
+      if (x.includes("fail")) return 95;
+      return 70;
+    }
 
-function render(){
-  const search = document.getElementById("search").value.toLowerCase();
+    function countryScore(v) {
+      const x = String(v || "").toLowerCase();
+      if (x.includes("australia") || x.includes("new zealand") || x.includes("singapore")) return 10;
+      if (x.includes("sri lanka") || x.includes("taiwan") || x.includes("hong kong")) return 25;
+      if (x.includes("china") || x.includes("turkey") || x.includes("vietnam")) return 40;
+      if (x.includes("indonesia") || x.includes("india") || x.includes("cambodia")) return 55;
+      if (x.includes("bangladesh") || x.includes("pakistan")) return 70;
+      return 45;
+    }
 
-  let filtered = rows.filter(r =>
-    r.name.toLowerCase().includes(search) &&
-    (filterRisk=="all" || riskLevel(r)==filterRisk)
-  );
+    function statusScore(v) {
+      return String(v || "").trim().toLowerCase() === "active" ? 15 : 75;
+    }
 
-  document.getElementById("list").innerHTML =
-    filtered.map(f=>`
-      <div class="factory">
-        ${f.name} | ${f.country} | ${f.capacity}
-      </div>
-    `).join("");
+    function recencyScore(v) {
+      const d = daysSince(v);
+      if (d <= 60) return 10;
+      if (d <= 120) return 25;
+      if (d <= 240) return 50;
+      return 75;
+    }
 
-  document.getElementById("decision").textContent =
-    filtered.length + " factories match filters";
-}
+    function band(score) {
+      if (score >= 61) return "High";
+      if (score >= 31) return "Medium";
+      return "Low";
+    }
 
-function setRisk(r){
-  filterRisk = r;
+    function riskScore(r) {
+      return Math.round(
+        complianceScore(r.compliance) * 0.35 +
+        countryScore(r.country) * 0.20 +
+        statusScore(r.status) * 0.15 +
+        recencyScore(r.last_order) * 0.15 +
+        ((r.capacity >= 500000 ? 75 : r.capacity >= 150000 ? 45 : 20) * 0.15)
+      );
+    }
 
-  document.querySelectorAll(".tag").forEach(t=>t.classList.remove("activeTag"));
-  event.target.classList.add("activeTag");
+    function actionText(factory, supplierShare, countryShare) {
+      const c = String(factory.compliance || "").toLowerCase();
+      const s = String(factory.status || "").toLowerCase();
 
-  render();
-}
+      if (c.includes("expired") || c.includes("fail")) return "Immediate audit and allocation freeze";
+      if (c.includes("not set") || c === "") return "Obtain compliance pack and validate before growth";
+      if (s !== "active") return "Review inactive site and remove or reactivate";
+      if (supplierShare >= 15 && factory.capacity >= 300000) return "Diversify supplier exposure and reduce dependency";
+      if (countryShare >= 30) return "Assess country diversification and contingency capacity";
+      if (daysSince(factory.last_order) > 240) return "Validate current operational readiness before next order";
+      return "Monitor and maintain current allocation";
+    }
 
-loadData();
-</script>
+    function urgencyText(score) {
+      if (score >= 75) return "This week";
+      if (score >= 61) return "This month";
+      if (score >= 31) return "Quarterly review";
+      return "Routine monitoring";
+    }
 
+    function badgeTone(text, kind) {
+      if (kind === "urgency") {
+        if (text === "This week") return "red";
+        if (text === "This month") return "amber";
+        return "blue";
+      }
+      if (text === "High") return "red";
+      if (text === "Medium") return "amber";
+      if (text === "Low") return "green";
+      return "slate";
+    }
+
+    function buildMetrics(rows) {
+      const supplierTotals = {};
+      const countryTotals = {};
+      let totalCapacity = 0;
+
+      rows.forEach((r) => {
+        const cap = Number(r.capacity) || 0;
+        totalCapacity += cap;
+        const s = r.contact || "Unassigned";
+        const c = r.country || "Unknown";
+        supplierTotals[s] = (supplierTotals[s] || 0) + cap;
+        countryTotals[c] = (countryTotals[c] || 0) + cap;
+      });
+
+      const enriched = rows.map((r) => {
+        const supplierCap = supplierTotals[r.contact || "Unassigned"] || 0;
+        const countryCap = countryTotals[r.country || "Unknown"] || 0;
+        const supplierShare = totalCapacity ? (supplierCap / totalCapacity) * 100 : 0;
+        const countryShare = totalCapacity ? (countryCap / totalCapacity) * 100 : 0;
+        const score = riskScore(r);
+
+        return {
+          ...r,
+          risk_score: score,
+          risk_band: band(score),
+          supplier_share: supplierShare,
+          country_share: countryShare,
+          action: actionText(r, supplierShare, countryShare),
+          urgency: urgencyText(score),
+        };
+      });
+
+      return { enriched, totalCapacity };
+    }
+
+    function getFiltered(enriched) {
+      return enriched.filter((r) => {
+        const hay = [
+          r.factory_code,
+          r.name,
+          r.country,
+          r.city,
+          r.contact,
+          r.product
+        ].join(" ").toLowerCase();
+
+        return (!search || hay.includes(search.toLowerCase())) &&
+          (region === "All" || r.region === region) &&
+          (riskView === "All" || r.risk_band === riskView);
+      });
+    }
+
+    function renderPills(regions) {
+      const regionWrap = document.getElementById("regionPills");
+      const riskWrap = document.getElementById("riskPills");
+      regionWrap.innerHTML = "";
+      riskWrap.innerHTML = "";
+
+      regions.forEach((r) => {
+        const btn = document.createElement("button");
+        btn.className = `pill ${region === r ? "active" : ""}`;
+        btn.textContent = r;
+        btn.onclick = () => {
+          region = r;
+          render();
+        };
+        regionWrap.appendChild(btn);
+      });
+
+      ["All", "High", "Medium", "Low"].forEach((r) => {
+        const btn = document.createElement("button");
+        btn.className = `pill ${riskView === r ? "active" : ""}`;
+        btn.textContent = `${r} risk`;
+        btn.onclick = () => {
+          riskView = r;
+          render();
+        };
+        riskWrap.appendChild(btn);
+      });
+    }
+
+    function renderMiniBars(elId, data, suffix = "") {
+      const el = document.getElementById(elId);
+      el.innerHTML = "";
+      const max = Math.max(...data.map((d) => Number(d.value || 0)), 1);
+
+      data.forEach((d) => {
+        const row = document.createElement("div");
+        row.innerHTML = `
+          <div class="mini-row-label">
+            <span>${escapeHtml(d.name)}</span>
+            <strong>${fmtNum(d.value)}${suffix}</strong>
+          </div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${(Number(d.value || 0) / max) * 100}%"></div>
+          </div>
+        `;
+        el.appendChild(row);
+      });
+    }
+
+    function escapeHtml(text) {
+      return String(text || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+
+    function renderWatchlist(items) {
+      const el = document.getElementById("watchlist");
+      el.innerHTML = "";
+
+      items.forEach((f) => {
+        const item = document.createElement("div");
+        item.className = "watch-item";
+        item.innerHTML = `
+          <div class="watch-top">
+            <div>
+              <div class="watch-name">${escapeHtml(f.name)}</div>
+              <div class="watch-sub">${escapeHtml(f.factory_code)} • ${escapeHtml(f.country)} • ${escapeHtml(f.city)}</div>
+            </div>
+            <div class="badge-row">
+              <span class="badge ${badgeTone(f.risk_band)}">${escapeHtml(f.risk_band)}</span>
+              <span class="badge ${badgeTone(f.urgency, "urgency")}">${escapeHtml(f.urgency)}</span>
+            </div>
+          </div>
+          <div class="watch-body">
+            <div><strong>Risk score:</strong> ${f.risk_score} • <strong>Capacity:</strong> ${fmtNum(f.capacity)} • <strong>Compliance:</strong> ${escapeHtml(f.compliance || "Not Set")}</div>
+            <div style="margin-top:6px"><strong>Action:</strong> ${escapeHtml(f.action)}</div>
+          </div>
+        `;
+        el.appendChild(item);
+      });
+    }
+
+    function renderCountryTable(rows) {
+      const el = document.getElementById("countryTable");
+      el.innerHTML = "";
+
+      rows.forEach((r) => {
+        const row = document.createElement("div");
+        row.className = "table-row";
+        row.innerHTML = `
+          <div class="strong">${escapeHtml(r.name)}</div>
+          <div>${r.factories}</div>
+          <div>${r.high}</div>
+          <div>${r.avgRisk}</div>
+          <div>${fmtNum(r.capacity)}</div>
+        `;
+        el.appendChild(row);
+      });
+    }
+
+    function renderFactoryList(filtered) {
+      const list = document.getElementById("factoryList");
+      if (!list) return;
+
+      list.innerHTML = "";
+      filtered.slice(0, 50).forEach((f) => {
+        const div = document.createElement("div");
+        div.className = "watch-item";
+        div.style.padding = "12px 0";
+        div.style.border = "none";
+        div.style.borderBottom = "1px solid var(--line)";
+        div.style.borderRadius = "0";
+        div.innerHTML = `${escapeHtml(f.name)} | ${escapeHtml(f.country)} | ${fmtNum(f.capacity)}`;
+        list.appendChild(div);
+      });
+    }
+
+    function render() {
+      const regions = ["All", ...new Set(rawRows.map((r) => r.region).filter(Boolean))];
+      const built = buildMetrics(rawRows);
+      const filtered = getFiltered(built.enriched);
+
+      const high = filtered.filter((r) => r.risk_band === "High");
+      const med = filtered.filter((r) => r.risk_band === "Medium");
+      const active = filtered.filter((r) => String(r.status || "").trim().toLowerCase() === "active").length;
+      const riskCap = high.reduce((a, b) => a + (Number(b.capacity) || 0), 0);
+      const filteredCap = filtered.reduce((a, b) => a + (Number(b.capacity) || 0), 0);
+
+      const supplierMap = {};
+      filtered.forEach((r) => {
+        const key = r.contact || "Unassigned";
+        if (!supplierMap[key]) supplierMap[key] = { name: key, factories: 0, capacity: 0, high: 0 };
+        supplierMap[key].factories += 1;
+        supplierMap[key].capacity += Number(r.capacity) || 0;
+        supplierMap[key].high += r.risk_band === "High" ? 1 : 0;
+      });
+
+      const supplierView = Object.values(supplierMap).sort((a, b) => b.capacity - a.capacity);
+      const top5SupplierCap = supplierView.slice(0, 5).reduce((a, b) => a + b.capacity, 0);
+      const supplierExposure = filteredCap ? (top5SupplierCap / filteredCap) * 100 : 0;
+
+      const countryMap = {};
+      filtered.forEach((r) => {
+        const key = r.country || "Unknown";
+        if (!countryMap[key]) countryMap[key] = { name: key, factories: 0, high: 0, score: 0, capacity: 0 };
+        countryMap[key].factories += 1;
+        countryMap[key].high += r.risk_band === "High" ? 1 : 0;
+        countryMap[key].score += r.risk_score;
+        countryMap[key].capacity += Number(r.capacity) || 0;
+      });
+
+      const countryView = Object.values(countryMap)
+        .map((x) => ({ ...x, avgRisk: Math.round(x.score / Math.max(x.factories, 1)) }))
+        .sort((a, b) => b.capacity - a.capacity);
+
+      const watchlist = [...filtered].sort((a, b) => b.risk_score - a.risk_score).slice(0, 12);
+
+      const story = filtered.length ? [
+        `${Math.round((riskCap / Math.max(filteredCap, 1)) * 100)}% of capacity sits in high-risk factories.`,
+        `Top 5 suppliers represent ${Math.round(supplierExposure)}% of filtered capacity.`,
+        countryView[0] ? `${countryView[0].name} is the largest country exposure with ${fmtNum(countryView[0].capacity)} capacity.` : "",
+        supplierView[0] ? `Largest supplier exposure is ${supplierView[0].name}.` : ""
+      ].filter(Boolean) : [];
+
+      document.getElementById("kpiFactories").textContent = fmtNum(filtered.length);
+      document.getElementById("kpiActive").textContent = fmtNum(active);
+      document.getElementById("kpiHigh").textContent = fmtNum(high.length);
+      document.getElementById("kpiHighSub").textContent = `${fmtNum(med.length)} medium risk sites`;
+      document.getElementById("kpiRiskCap").textContent = fmtNum(riskCap);
+      document.getElementById("kpiSupplierShare").textContent = `${Math.round(supplierExposure)}%`;
+      document.getElementById("kpiTotalCap").textContent = fmtNum(filteredCap);
+      document.getElementById("decisionImmediate").textContent = fmtNum(watchlist.filter((x) => x.urgency === "This week").length);
+      document.getElementById("decisionCountry").textContent = countryView[0] ? countryView[0].name : "-";
+      document.getElementById("decisionSupplier").textContent = supplierView[0] ? supplierView[0].name : "-";
+
+      const storyList = document.getElementById("storyList");
+      storyList.innerHTML = "";
+      story.forEach((s) => {
+        const div = document.createElement("div");
+        div.className = "story-box";
+        div.textContent = s;
+        storyList.appendChild(div);
+      });
+
+      renderPills(regions);
+      renderMiniBars("countryBars", countryView.slice(0, 8).map((x) => ({ name: x.name, value: x.capacity })));
+      renderMiniBars("supplierBars", supplierView.slice(0, 8).map((x) => ({ name: x.name.length > 26 ? `${x.name.slice(0, 26)}…` : x.name, value: x.capacity })));
+      renderMiniBars("riskBars", countryView.slice(0, 8).map((x) => ({ name: x.name, value: x.avgRisk })));
+      renderWatchlist(watchlist);
+      renderCountryTable(countryView);
+      renderFactoryList(filtered);
+    }
+
+    async function loadLiveData() {
+      try {
+        const response = await fetch(DATA_URL, { cache: "no-store" });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const text = await response.text();
+        rawRows = parseCsv(text);
+        document.getElementById("statusMessage").textContent = `Live data connected: ${rawRows.length.toLocaleString()} factories loaded from GitHub.`;
+        if (!rawRows.length) {
+          document.getElementById("statusMessage").textContent = "Live GitHub data loaded, but no valid rows were parsed from the CSV.";
+        }
+        render();
+      } catch (err) {
+        document.getElementById("statusMessage").textContent = "Live GitHub data could not be loaded. You can still use the manual CSV upload as a fallback.";
+      }
+    }
+
+    document.getElementById("csvInput").addEventListener("change", async (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        rawRows = parseCsv(text);
+        document.getElementById("statusMessage").textContent = `Loaded ${rawRows.length.toLocaleString()} factories from ${file.name} (manual override).`;
+        render();
+      } catch (err) {
+        document.getElementById("statusMessage").textContent = "Could not read the uploaded CSV.";
+      }
+    });
+
+    document.getElementById("searchInput").addEventListener("input", (e) => {
+      search = e.target.value || "";
+      render();
+    });
+
+    loadLiveData();
+  </script>
 </body>
 </html>
